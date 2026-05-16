@@ -1,0 +1,65 @@
+name: mobile_isatech
+description: Aplicacion movil para choferes que se integra con la plataforma IsaTech.
+publish_to: "none"
+version: 0.2.0+2
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # HTTP y autenticacion
+  dio: ^5.7.0
+  flutter_secure_storage: ^9.2.2
+
+  # Navegacion y estado
+  go_router: ^14.6.2
+  flutter_riverpod: ^2.6.1
+
+  # Modelos tipados
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # GPS y utilidades
+  geolocator: ^13.0.2
+  intl: ^0.19.0
+  permission_handler: ^11.3.1
+  url_launcher: ^6.3.1
+
+  # Mapa (solo para simulador de ubicacion en debug)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Captura de foto para evidencias de checkpoints delivery/pickup
+  image_picker: ^1.1.2
+  http_parser: ^4.0.2
+
+  # Foreground service Android para que el reporte de ubicacion siga
+  # corriendo cuando la app esta minimizada / pantalla apagada.
+  flutter_foreground_task: ^8.17.0
+
+  # Pantalla fake-call de la cascada de alertas (ringtone + vibracion).
+  audioplayers: ^6.1.0
+  vibration: ^2.1.0
+
+  # Notificaciones del SO (barra de Android) cuando llegan alertas
+  # importantes con la app en background o pantalla apagada.
+  flutter_local_notifications: ^17.2.4
+
+  # Text-to-speech para navegacion turn-by-turn (MC-021).
+  flutter_tts: ^4.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true

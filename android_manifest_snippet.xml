@@ -1,0 +1,34 @@
+<!--
+  Fragmento que hay que pegar dentro de android/app/src/main/AndroidManifest.xml
+  despues de `flutter create . --platforms android`.
+
+  1) Permisos (al nivel <manifest>, antes del <application>):
+-->
+
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+<uses-permission android:name="android.permission.CALL_PHONE"/>
+<uses-permission android:name="android.permission.INTERNET"/>
+
+<!--
+  2) Dentro de <application android:label="IsaTech Conductor" ...>, agregar
+     para permitir cleartext http a los backends locales (dev):
+     android:usesCleartextTraffic="true"
+
+  3) Para que url_launcher pueda abrir tel: y https:, dentro de <queries>:
+-->
+
+<queries>
+    <intent>
+        <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="tel"/>
+    </intent>
+    <intent>
+        <action android:name="android.intent.action.VIEW"/>
+        <data android:scheme="https"/>
+    </intent>
+</queries>
