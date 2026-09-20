@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../shared/models/proximity_error.dart';
+import '../../viaje/models/trip_checklist.dart';
 import '../../viaje/models/trip_pause_status.dart';
 import '../models/route_progress_response.dart';
 import '../models/trip.dart';
@@ -165,6 +166,76 @@ class TripsRepository {
       return TripPauseStatus.fromJson(res.data!);
     } on DioException catch (e) {
       throw mapDioError(e, fallback: 'No se pudo cancelar la pausa');
+    }
+  }
+
+  /// Lee el checklist de salida completo de un viaje (MC-022). Para
+  /// viajes viejos pre-MC-022 el backend puede devolver `items: []`
+  /// (200 con lista vacia) o directamente 404 (el endpoint no encontro
+  /// `params.checklist`). Tratamos ambos casos como "sin checklist":
+  /// la seccion se autocolapsa y el boton Iniciar viaje no se bloquea.
+  Future<TripChecklist> getChecklist(String tripId) async {
+    try {
+      final res = await _client.tracking.get<Map<String, dynamic>>(
+        '/trips/$tripId/checklist',
+      );
+      return TripChecklist.fromJson(res.data!);
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        // Trip sin checklist definido — caso esperado para viajes
+        // legacy. NO es error real, devolvemos snapshot vacio.
+        return TripChecklist.empty(tripId);
+      }
+      throw mapDioError(e, fallback: 'No se pudo cargar el checklist');
+    }
+  }
+
+  /// Marca un item como tildado. El backend gatea que el JWT pertenezca
+  /// al chofer asignado y que el trip no este FINISHED/CANCELLED.
+  /// Devuelve el item actualizado (con `checked: true`, `checked_at`,
+  /// `checked_by`).
+  Future<ChecklistItem> checkChecklistItem({
+    required String tripId,
+    required String itemKey,
+  }) =>
+      _toggleChecklistItem(tripId: tripId, itemKey: itemKey, check: true);
+
+  /// Destilda un item por si el chofer se equivoco. Mismas garantias de
+  /// permisos y estado que [checkChecklistItem]. Devuelve el item con
+  /// `checked: false` y metadatos en null.
+  Future<ChecklistItem> uncheckChecklistItem({
+    required String tripId,
+    required String itemKey,
+  }) =>
+      _toggleChecklistItem(tripId: tripId, itemKey: itemKey, check: false);
+
+  Future<ChecklistItem> _toggleChecklistItem({
+    required String tripId,
+    required String itemKey,
+    required bool check,
+  }) async {
+    final accion = check ? 'check' : 'uncheck';
+    try {
+      final res = await _client.tracking.post<Map<String, dynamic>>(
+        '/trips/$tripId/checklist/items/$itemKey/$accion',
+      );
+      return ChecklistItem.fromJson(res.data!);
+    } on DioException catch (e) {
+      final resp = e.response;
+      switch (resp?.statusCode) {
+        case 403:
+          throw ChecklistNoAutorizadoException();
+        case 404:
+          throw ChecklistItemNoEncontradoException();
+        case 409:
+          throw ChecklistTripCerradoException();
+      }
+      throw mapDioError(
+        e,
+        fallback: check
+            ? 'No se pudo marcar el ítem'
+            : 'No se pudo destildar el ítem',
+      );
     }
   }
 }

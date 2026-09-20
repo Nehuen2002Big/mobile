@@ -20,6 +20,15 @@ class AuthUser with _$AuthUser {
       userType.toUpperCase() == 'DRIVER' ||
       roles.map((r) => r.toLowerCase()).contains('conductor');
 
+  /// `true` si el user tiene rol `admin` en la lista de roles del JWT.
+  /// Lo usamos para gatear features de debug/QA (ej. el simulador de
+  /// ubicacion en el AppBar del viaje activo) sin exponerlas al chofer
+  /// normal. El admin sigue siendo un chofer real (pasa la validacion
+  /// de `driver_profile` en bootstrap); el rol es un add-on, no un
+  /// reemplazo.
+  bool get esAdmin =>
+      roles.map((r) => r.toLowerCase()).contains('admin');
+
   factory AuthUser.fromJson(Map<String, dynamic> json) =>
       _$AuthUserFromJson(json);
 }

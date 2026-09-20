@@ -237,7 +237,15 @@ class _ViajePendienteCardState extends ConsumerState<ViajePendienteCard> {
     final origenLon = trip.origenLon;
     final tieneOrigenCoords = origenLat != null && origenLon != null;
     final cerca = _distanciaM != null && _distanciaM! <= _umbralIniciarM;
-    final puedeIniciar = tieneOrigenCoords && cerca && !_enviando;
+    // MC-022: el checklist de salida tambien gatea el inicio. Para
+    // viajes sin checklist definido (legacy / operador no agrego items)
+    // `permiteIniciar` ya es true y este gate no aplica.
+    final checklist = ref
+        .watch(tripChecklistNotifierProvider(trip.id))
+        .checklist;
+    final checklistOk = checklist.permiteIniciar;
+    final puedeIniciar =
+        tieneOrigenCoords && cerca && checklistOk && !_enviando;
     // MC-020: si el viaje quedo en cola detras de otro, mostrar
     // disclaimer al lado del boton "Llevarme al origen". El chofer
     // puede manejar hacia el proximo origen mientras termina el actual.
@@ -401,13 +409,19 @@ class _ViajePendienteCardState extends ConsumerState<ViajePendienteCard> {
               label: Text(
                 _enviando
                     ? 'Iniciando...'
-                    : tieneOrigenCoords
-                        ? cerca
-                            ? 'Iniciar viaje'
-                            : _distanciaM == null
-                                ? 'Buscando GPS...'
-                                : 'Acercate al origen (${_formatearDistancia(_distanciaM!)} restantes)'
-                        : 'Iniciar viaje',
+                    // MC-022: checklist tiene prioridad sobre el guard
+                    // de proximidad — la idea de producto es "primero
+                    // verifica, despues te movés al origen".
+                    : !checklistOk
+                        ? 'Falta completar checklist '
+                            '(${checklist.completedCount}/${checklist.totalCount})'
+                        : tieneOrigenCoords
+                            ? cerca
+                                ? 'Iniciar viaje'
+                                : _distanciaM == null
+                                    ? 'Buscando GPS...'
+                                    : 'Acercate al origen (${_formatearDistancia(_distanciaM!)} restantes)'
+                            : 'Iniciar viaje',
               ),
             ),
             if (!tieneOrigenCoords) ...[

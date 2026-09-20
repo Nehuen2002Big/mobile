@@ -21,6 +21,7 @@ import '../features/locations/models/location_info.dart';
 import '../features/navegacion/data/navigation_repository.dart';
 import '../features/navegacion/state/navegacion_state.dart';
 import '../features/uploads/data/uploads_repository.dart';
+import '../features/viaje/state/trip_checklist_state.dart';
 import '../features/viaje/state/trip_pause_state.dart';
 
 // --- Core ---
@@ -121,6 +122,13 @@ final pendingActionNotifierProvider =
 final tripPauseNotifierProvider =
     NotifierProvider.family<TripPauseNotifier, TripPauseState, String>(
   TripPauseNotifier.new,
+);
+
+// --- Checklist de salida (family por tripId, MC-022) ---
+
+final tripChecklistNotifierProvider = NotifierProvider.family<
+    TripChecklistNotifier, TripChecklistState, String>(
+  TripChecklistNotifier.new,
 );
 
 // --- Directiva preset del operador (MC-018) ---

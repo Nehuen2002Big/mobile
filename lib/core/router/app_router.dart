@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,6 +32,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         case AuthStatus.autenticado:
           if (loc == '/login' || loc == '/splash' || loc == '/') {
             return '/viajes';
+          }
+          // Gate de /debug/ubicacion (simulador): solo admin en debug
+          // builds. Defensa en profundidad sobre el gate del boton del
+          // AppBar — por si alguien intenta navegar por URL directa.
+          if (loc == '/debug/ubicacion') {
+            final esAdmin = auth.user?.esAdmin ?? false;
+            if (!kDebugMode || !esAdmin) return '/viajes';
           }
           return null;
       }

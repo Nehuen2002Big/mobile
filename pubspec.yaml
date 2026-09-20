@@ -53,6 +53,12 @@ dependencies:
   # Text-to-speech para navegacion turn-by-turn (MC-021).
   flutter_tts: ^4.2.0
 
+  # Fuentes del design system (Syne, Plus Jakarta Sans, Space Mono).
+  # La primera ejecucion descarga los .ttf y los cachea en disco;
+  # los siguientes arranques son offline. Si no hay red la primera
+  # vez, google_fonts cae al system font como fallback (no crashea).
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -52,3 +52,36 @@ class TripYaCerradoException extends ApiException {
           statusCode: 400,
         );
 }
+
+/// 403 al check/uncheck cuando el JWT no corresponde al chofer asignado
+/// del trip. No deberia pasar en flujo normal (el chofer solo ve sus
+/// propios viajes) pero lo mapeamos por defensa: si pasa, la app
+/// revierte la marca optimista y avisa al chofer.
+class ChecklistNoAutorizadoException extends ApiException {
+  ChecklistNoAutorizadoException([String? message])
+      : super(
+          message ?? 'No tenés permiso para modificar este checklist.',
+          statusCode: 403,
+        );
+}
+
+/// 404 al check/uncheck cuando el item key no existe en el checklist
+/// del trip. Indica que el cache local quedo desactualizado (el
+/// operador probablemente edito la hoja de ruta). La UI debe refrescar.
+class ChecklistItemNoEncontradoException extends ApiException {
+  ChecklistItemNoEncontradoException([String? message])
+      : super(
+          message ?? 'El ítem del checklist ya no existe. Refrescá.',
+          statusCode: 404,
+        );
+}
+
+/// 409 al check/uncheck cuando el trip ya esta FINISHED o CANCELLED.
+/// El checklist es read-only despues del cierre. La UI debe refrescar.
+class ChecklistTripCerradoException extends ApiException {
+  ChecklistTripCerradoException([String? message])
+      : super(
+          message ?? 'El viaje ya está cerrado; no se modifica el checklist.',
+          statusCode: 409,
+        );
+}

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +19,7 @@ import '../../hoja_ruta/models/road_sheet.dart';
 import '../../hoja_ruta/models/trip.dart';
 import '../../ingest/service/gps_service.dart';
 import '../../shared/ui/proximity_error_helpers.dart';
+import 'checklist_section.dart';
 import 'trip_pause_banner.dart';
 import 'viaje_pendiente_card.dart';
 
@@ -294,11 +297,17 @@ class _ViajeActivoScreenState extends ConsumerState<ViajeActivoScreen>
       );
     });
 
+    // Gate del simulador de ubicacion: solo visible para usuarios con
+    // rol 'admin' en builds debug. En release builds nunca aparece, da
+    // igual el rol — el AND con kDebugMode garantiza que el bundle
+    // productivo no exponga la herramienta de QA al chofer normal.
+    final esAdmin =
+        ref.watch(authNotifierProvider).user?.esAdmin ?? false;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.tripId),
         actions: [
-          if (kDebugMode) _BotonSimuladorDebug(),
+          if (kDebugMode && esAdmin) _BotonSimuladorDebug(),
           _BotonChat(tripId: widget.tripId),
           IconButton(
             onPressed: () => setState(() {
@@ -351,6 +360,11 @@ class _ViajeActivoScreenState extends ConsumerState<ViajeActivoScreen>
                           }),
                         ),
                         const SizedBox(height: 16),
+                        // MC-022: checklist de salida visible en PENDING.
+                        // El boton "Iniciar viaje" del card de arriba
+                        // queda bloqueado hasta que esten todos tildados.
+                        ChecklistSection(tripId: trip.id),
+                        const SizedBox(height: 16),
                         _HojaRutaCard(trip: trip),
                         const SizedBox(height: 16),
                         if (trip.hojaRuta.contactosList.isNotEmpty) ...[
@@ -375,6 +389,16 @@ class _ViajeActivoScreenState extends ConsumerState<ViajeActivoScreen>
                         const SizedBox(height: 16),
                         _HojaRutaCard(trip: trip),
                         const SizedBox(height: 16),
+                        // MC-022: checklist tambien visible en ACTIVE
+                        // por si el chofer necesita destildar/retildar
+                        // algo mid-viaje. En FINISHED/CANCELLED el
+                        // backend lo devuelve read-only y el widget
+                        // sigue mostrandolo igual sin permitir cambios
+                        // (los 409 revierten cualquier toggle).
+                        if (trip.esActivo) ...[
+                          ChecklistSection(tripId: trip.id),
+                          const SizedBox(height: 16),
+                        ],
                         if (trip.hojaRuta.contactosList.isNotEmpty) ...[
                           _ContactosCard(
                             contactos: trip.hojaRuta.contactosList,
@@ -530,6 +554,12 @@ class _TrackingCard extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Text(
+                  // TODO(MC-022-followup): gps.ultimoError contiene el
+                  // toString del exception crudo (ej. "TimeoutException
+                  // after 0:00:08.000000: Future not completed"). Se
+                  // ve feo al chofer durante el cold start del GPS.
+                  // Reemplazar por un mensaje legible o ignorar
+                  // TimeoutException en gps_service.dart:238.
                   gps.ultimoError!,
                   style: TextStyle(color: scheme.error),
                 ),
@@ -751,11 +781,43 @@ class _KVChild extends StatelessWidget {
 /// Banner rojo que aparece cuando el viaje esta ACTIVE pero el GpsService no
 /// esta reportando. Indica error de permisos / servicio caido y ofrece
 /// reintentar o abrir Configuracion segun el caso.
-class _BannerGpsCaido extends ConsumerWidget {
+///
+/// Tiene un "warmup" de 1.5s al montarse: durante ese tiempo no se muestra
+/// nada. Razon: al entrar al viaje activo, el `_watchdogGpsActivo` dispara
+/// `gps.iniciar()` que tarda 1-2s en enganchar el primer fix. Sin warmup,
+/// el banner aparece durante esa ventana y desaparece solo — flicker feo.
+/// Pasado el warmup, si el GPS sigue inactivo es indicio de un problema
+/// real (permisos / servicio off) y ahi si vale mostrarlo.
+class _BannerGpsCaido extends ConsumerStatefulWidget {
   const _BannerGpsCaido({required this.trip});
   final Trip trip;
 
-  Future<void> _reactivar(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<_BannerGpsCaido> createState() => _BannerGpsCaidoState();
+}
+
+class _BannerGpsCaidoState extends ConsumerState<_BannerGpsCaido> {
+  static const _warmup = Duration(milliseconds: 1500);
+
+  bool _warmupDone = false;
+  Timer? _warmupTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _warmupTimer = Timer(_warmup, () {
+      if (!mounted) return;
+      setState(() => _warmupDone = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _warmupTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _reactivar(BuildContext context) async {
     final gps = ref.read(gpsServiceProvider);
     final messenger = ScaffoldMessenger.of(context);
     final permiso = await gps.pedirPermisoUbicacion();
@@ -772,7 +834,7 @@ class _BannerGpsCaido extends ConsumerWidget {
       );
       return;
     }
-    await gps.iniciar(imei: trip.imei, tripId: trip.id);
+    await gps.iniciar(imei: widget.trip.imei, tripId: widget.trip.id);
     if (!context.mounted) return;
     messenger.showSnackBar(
       const SnackBar(content: Text('GPS reactivado')),
@@ -780,7 +842,8 @@ class _BannerGpsCaido extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    if (!_warmupDone) return const SizedBox.shrink();
     final gps = ref.watch(gpsServiceProvider);
     final scheme = Theme.of(context).colorScheme;
     final motivo = gps.ultimoError ?? 'GPS no está reportando';
@@ -819,7 +882,7 @@ class _BannerGpsCaido extends ConsumerWidget {
           ),
           const SizedBox(width: 8),
           FilledButton.tonal(
-            onPressed: () => _reactivar(context, ref),
+            onPressed: () => _reactivar(context),
             style: FilledButton.styleFrom(
               backgroundColor: scheme.error,
               foregroundColor: scheme.onError,
