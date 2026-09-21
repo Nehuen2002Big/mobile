@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers.dart';
+import '../../../ui/theme/app_theme.dart' show IsaColors;
 import '../../alertas/data/alert_styles.dart';
 import '../../alertas/data/prefijos_alerta.dart';
 import '../../alertas/ui/pending_action_banner.dart';
@@ -336,17 +337,21 @@ class _Burbuja extends StatelessWidget {
     final Color textoColor;
     Border? border;
     if (esViajeAsignado) {
-      fondo = Colors.blue.shade50;
-      textoColor = Colors.blue.shade900;
-      border = Border.all(color: Colors.blue.shade300);
+      // Tints translucidos sobre superficie oscura (mismos valores que
+      // IsaStatusPill del design system). Antes usaban shade50/shade900
+      // de Material, que son del theme light y sobre zinc-950 quedaban
+      // como bloques claros que rompian la pantalla.
+      fondo = const Color(0x1A22D3EE); // cyan-400 / 10
+      textoColor = IsaColors.cyan300;
+      border = Border.all(color: const Color(0x4D22D3EE));
     } else if (esViajeEnCola) {
-      fondo = Colors.blueGrey.shade50;
-      textoColor = Colors.blueGrey.shade800;
-      border = Border.all(color: Colors.blueGrey.shade300);
+      fondo = const Color(0x2671717A); // zinc-500 / 15
+      textoColor = IsaColors.zinc300;
+      border = Border.all(color: const Color(0x6671717A));
     } else if (esViajeListo) {
-      fondo = Colors.green.shade50;
-      textoColor = Colors.green.shade900;
-      border = Border.all(color: Colors.green.shade400, width: 1.5);
+      fondo = const Color(0x2622C55E); // emerald-500 / 15
+      textoColor = IsaColors.emerald400;
+      border = Border.all(color: const Color(0x5922C55E), width: 1.5);
     } else if (esDirectivaOp) {
       // Mismo look que el overlay (azul oscuro + borde dorado) para
       // que el chofer reconozca la directiva al scrollear el historial.
@@ -432,21 +437,21 @@ class _Burbuja extends StatelessWidget {
                       _SystemTripHeader(
                         icono: Icons.assignment,
                         label: 'VIAJE ASIGNADO',
-                        color: Colors.blue.shade700,
+                        color: IsaColors.cyan300,
                       ),
                       const SizedBox(height: 6),
                     ] else if (esViajeEnCola) ...[
                       _SystemTripHeader(
                         icono: Icons.hourglass_top,
                         label: 'VIAJE EN COLA',
-                        color: Colors.blueGrey.shade700,
+                        color: IsaColors.zinc300,
                       ),
                       const SizedBox(height: 6),
                     ] else if (esViajeListo) ...[
                       _SystemTripHeader(
                         icono: Icons.check_circle,
                         label: 'VIAJE LISTO',
-                        color: Colors.green.shade700,
+                        color: IsaColors.emerald400,
                       ),
                       const SizedBox(height: 6),
                     ] else if (esDirectivaOp) ...[

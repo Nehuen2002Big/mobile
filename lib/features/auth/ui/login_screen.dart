@@ -96,7 +96,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) => _submit(),
                       decoration: InputDecoration(
-                        labelText: 'Contrasena',
+                        labelText: 'Contraseña',
                         border: const OutlineInputBorder(),
                         suffixIcon: IconButton(
                           onPressed: () =>

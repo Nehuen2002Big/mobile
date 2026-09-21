@@ -462,8 +462,8 @@ class _TrackingCard extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     gps.activo
-                        ? 'Reportando ubicacion del telefono'
-                        : 'Reporte de telefono detenido',
+                        ? 'Reportando ubicación del teléfono'
+                        : 'Reporte de teléfono detenido',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -523,8 +523,8 @@ class _TrackingCard extends ConsumerWidget {
             ],
             const SizedBox(height: 8),
             Text(
-              'Tu telefono reporta cada ${gps.enBackground ? 60 : 15}s. '
-              'El dispositivo satelital del camion (IMEI ${trip.imei}) '
+              'Tu teléfono reporta cada ${gps.enBackground ? 60 : 15}s. '
+              'El dispositivo satelital del camión (IMEI ${trip.imei}) '
               'reporta por su cuenta.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).hintColor,
@@ -719,11 +719,11 @@ class _IndicadorPhoneLocation extends StatelessWidget {
       texto = 'Ultimo reporte fallo';
     } else if (ultimoEnvio == null) {
       color = Theme.of(context).hintColor;
-      texto = 'Reportando ubicacion del telefono...';
+      texto = 'Reportando ubicación del teléfono...';
     } else {
       color = Colors.green;
       final hora = DateFormat('HH:mm:ss').format(ultimoEnvio!);
-      texto = 'Reportando ubicacion (telefono) · $hora'
+      texto = 'Reportando ubicación (teléfono) · $hora'
           '${enBackground ? ' · segundo plano' : ''}';
     }
     return Row(
@@ -903,7 +903,7 @@ class _BotonSimuladorDebug extends ConsumerWidget {
     final overrideActivo =
         ref.watch(gpsServiceProvider.select((s) => s.overrideActivo));
     return IconButton(
-      tooltip: 'Simular ubicacion (debug)',
+      tooltip: 'Simular ubicación (debug)',
       icon: Icon(
         overrideActivo ? Icons.pin_drop : Icons.pin_drop_outlined,
         color: overrideActivo ? Colors.orange : null,

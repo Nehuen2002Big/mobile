@@ -59,21 +59,26 @@ class _ViajePendienteCardState extends ConsumerState<ViajePendienteCard> {
   }
 
   Future<void> _refrescarDistancia() async {
-    final origenLat = widget.trip.origenLat;
-    final origenLon = widget.trip.origenLon;
-    if (origenLat == null || origenLon == null) return;
     if (_buscandoGps) return;
     _buscandoGps = true;
     try {
+      // La posicion del chofer se muestra SIEMPRE, tenga o no el origen
+      // coordenadas: son datos independientes. Antes saliamos temprano
+      // cuando faltaban las del origen y "Tu posicion" quedaba clavado
+      // en "Buscando GPS..." aunque la app ya supiera donde estaba.
       final gps = ref.read(gpsServiceProvider);
       final pos = await gps.ubicacionActual();
       if (pos == null) return;
-      final dist = haversineMeters(
-        pos.latitude,
-        pos.longitude,
-        origenLat,
-        origenLon,
-      );
+      final origenLat = widget.trip.origenLat;
+      final origenLon = widget.trip.origenLon;
+      final dist = (origenLat != null && origenLon != null)
+          ? haversineMeters(
+              pos.latitude,
+              pos.longitude,
+              origenLat,
+              origenLon,
+            )
+          : null;
       if (!mounted) return;
       setState(() {
         _distanciaM = dist;
@@ -103,7 +108,7 @@ class _ViajePendienteCardState extends ConsumerState<ViajePendienteCard> {
       final pos = await gps.ubicacionActual();
       if (pos == null) {
         messenger.showSnackBar(
-          const SnackBar(content: Text('Sin ubicacion GPS. Probá de nuevo.')),
+          const SnackBar(content: Text('Sin ubicación GPS. Probá de nuevo.')),
         );
         return;
       }
@@ -301,7 +306,7 @@ class _ViajePendienteCardState extends ConsumerState<ViajePendienteCard> {
             // Posicion actual
             _Fila(
               icon: Icons.my_location,
-              label: 'Tu posicion',
+              label: 'Tu posición',
               child: Text(
                 _latActual != null && _lonActual != null
                     ? '${_latActual!.toStringAsFixed(5)}, '
@@ -338,7 +343,7 @@ class _ViajePendienteCardState extends ConsumerState<ViajePendienteCard> {
                           : _distanciaM == null
                               ? 'Calculando distancia al origen...'
                               : cerca
-                                  ? 'Estas en el origen. Ya podes iniciar.'
+                                  ? 'Estás en el origen. Ya podés iniciar.'
                                   : 'Distancia al origen: '
                                       '${_formatearDistancia(_distanciaM!)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -428,7 +433,7 @@ class _ViajePendienteCardState extends ConsumerState<ViajePendienteCard> {
               const SizedBox(height: 8),
               Text(
                 'Nota: como el origen no tiene coordenadas, el backend usara '
-                'un fallback. Consulta al operador si no podes iniciar.',
+                'un fallback. Consultá al operador si no podés iniciar.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).hintColor,
                     ),

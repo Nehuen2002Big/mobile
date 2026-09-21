@@ -40,6 +40,39 @@ class GpsService extends ChangeNotifier {
     // del isolate background — especificamente `trip_ended_remotely`
     // que se dispara cuando el backend devuelve 409 al phone-location.
     _attachTaskDataCallback();
+    _aplicarOverrideDeCompilacion();
+  }
+
+  /// Coordenadas fijas inyectadas al compilar, para QA local. El caso de
+  /// uso es el emulador: ahi `adb emu geo fix` no se aplica (los cuatro
+  /// providers quedan en `last location=null`) y el GPS nunca engancha,
+  /// asi que se le pasa la ubicacion de la maquina de desarrollo:
+  ///
+  ///   flutter run --dart-define=ISA_LAT=-34.6334 \
+  ///               --dart-define=ISA_LON=-58.4616
+  ///
+  /// Sin los defines quedan vacios y la app usa el GPS real — en un
+  /// build productivo el branch se elimina por tree-shaking al ser
+  /// `const`. Reutiliza [setOverride], el mismo camino que el simulador
+  /// de ubicacion, asi el ingest sigue reportando con polling local.
+  static const _latCompilacion = String.fromEnvironment('ISA_LAT');
+  static const _lonCompilacion = String.fromEnvironment('ISA_LON');
+
+  void _aplicarOverrideDeCompilacion() {
+    if (_latCompilacion.isEmpty || _lonCompilacion.isEmpty) return;
+    final lat = double.tryParse(_latCompilacion);
+    final lon = double.tryParse(_lonCompilacion);
+    if (lat == null || lon == null) {
+      if (kDebugMode) {
+        debugPrint('[GpsService] ISA_LAT/ISA_LON invalidos: '
+            '"$_latCompilacion" / "$_lonCompilacion"');
+      }
+      return;
+    }
+    if (kDebugMode) {
+      debugPrint('[GpsService] override de compilacion activo: $lat, $lon');
+    }
+    setOverride(lat, lon);
   }
 
   final IngestRepository _repo;

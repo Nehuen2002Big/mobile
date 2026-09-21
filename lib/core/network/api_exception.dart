@@ -11,7 +11,7 @@ class ApiException implements Exception {
 }
 
 class UnauthorizedException extends ApiException {
-  UnauthorizedException([String message = 'Sesion expirada'])
+  UnauthorizedException([String message = 'Sesión expirada'])
       : super(message, statusCode: 401);
 }
 

@@ -85,7 +85,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: const [
                   SizedBox(height: 120),
-                  Center(child: Text('No tenes viajes asignados')),
+                  Center(child: Text('No tenés viajes asignados')),
                 ],
               );
             }

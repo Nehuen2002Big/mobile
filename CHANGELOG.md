@@ -3,6 +3,93 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-AR/1.1.0/)
 y versionado siguiendo [Semantic Versioning](https://semver.org/lang/es/).
 
+## [No publicado]
+
+### Añadido
+
+- **Design system dark IsaTech** — la app pasa de light Material 3
+  (seed `#0A5CA8`) al theme oscuro de la plataforma.
+  - `lib/ui/theme/app_theme.dart` reescrito: `ColorScheme` hand-rolled
+    con paleta zinc, fondo `zinc-950`, cards `zinc-900`, botón primario
+    **blanco** (`zinc-100`), cyan-400 como acento (cursor, selección,
+    label flotante, acción de SnackBar), FAB amber. Exporta `IsaColors`
+    e `IsaRadii`.
+  - Tipografías vía `google_fonts ^6.2.1`: Syne (headings), Plus
+    Jakarta Sans (body).
+  - `lib/ui/widgets/isa_widgets.dart` (nuevo): `IsaStatusPill`,
+    `IsaStatusDot`, `IsaTopoBackground`, `IsaGradientText`.
+- **Checklist de salida (MC-022)** — el chofer verifica los ítems que
+  definió el operador antes de salir.
+  - `GET /trips/{id}/checklist` + `POST .../items/{key}/check` +
+    `.../uncheck` en `TripsRepository`.
+  - `TripChecklist` / `ChecklistItem` planos (sin `build_runner`).
+  - `TripChecklistNotifier` family por `tripId`: toggle optimista con
+    cola in-memory que se vacía al volver la red.
+  - `ChecklistSection` con progress bar, haptic al tildar y timestamps
+    relativos.
+  - Botón "Iniciar viaje" bloqueado hasta completar, con label
+    `Falta completar checklist (N/M)`; el gate tiene prioridad sobre el
+    de proximidad.
+- **Gate de admin para el simulador de ubicación** — `AuthUser.esAdmin`
+  (rol `admin` en el JWT). El botón del AppBar y la ruta
+  `/debug/ubicacion` ahora exigen `kDebugMode && esAdmin`; el chofer
+  común no puede llegar al simulador ni por deep-link.
+
+### Cambiado
+
+- **Chat migrado al dark theme** — las burbujas de `[VIAJE ASIGNADO]`,
+  `[VIAJE EN COLA]` y `[VIAJE LISTO]` usaban `Colors.*.shade50` con
+  texto `shade900` (theme light): sobre `zinc-950` se veían como
+  bloques claros que rompían la pantalla. Pasan a tints translúcidos
+  cyan / zinc / emerald con los mismos valores que `IsaStatusPill`.
+- **Textos**: agregadas tildes y ñ en ~13 strings visibles al chofer
+  ("Contraseña", "Tu posición", "Sesión expirada", "ubicación",
+  "teléfono", "camión", "No tenés viajes asignados", "Estás en el
+  origen. Ya podés iniciar", entre otros).
+- **`README.md`**: corregida la sección de permisos Android, que
+  afirmaba tener declarados `ACCESS_BACKGROUND_LOCATION` y `VIBRATE`
+  (ninguno de los dos está en el manifest) y un `<queries>` con `geo:`
+  (solo tiene `tel:` y `https:`). Documentado por qué no hacen falta.
+  `minSdkVersion` actualizado: lo fija Flutter (24), no 23.
+
+### Bugfix
+
+- **AppBar con el título pegado al borde izquierdo** — el
+  `titleSpacing: 0` del theme nuevo dejaba "Mis viajes" sin margen en
+  pantallas sin botón de back. Vuelve al default de Material (16).
+- **404 del checklist tratado como error** — `GET /checklist` devuelve
+  404 en viajes sin checklist definido (todos los previos a MC-022) y
+  la app mostraba "Not Found" al abrir el viaje. Ahora se interpreta
+  como checklist vacío: la sección se autocolapsa y no bloquea el
+  inicio.
+- **Flicker del banner "No estás reportando ubicación"** — aparecía
+  1-2s al abrir un viaje activo mientras el watchdog todavía arrancaba
+  el GPS. `_BannerGpsCaido` ahora espera un warmup de 1.5s antes de
+  renderizar.
+
+### Verificado
+
+- `flutter analyze`: 134 issues, idéntico al baseline previo (todos
+  `info` pre-existentes: `require_trailing_commas` en `.g.dart`
+  generados, `avoid_print` en debug).
+- QA en emulador (AVD `moto_g52_sim`, Android 13, 1080×2400) contra
+  backend de producción: login, listado de viajes, detalle de viaje
+  pendiente, chat y **"Llevarme al origen"** (dispara
+  `action.VIEW dat=geo:` → Google Maps, confirmado por logcat).
+
+### Pendiente / detectado sin resolver
+
+- **MC-011 reproducido en vivo**: el chat cobra `401 Sesión expirada`
+  a los ~6 minutos del login y **la app no hace logout** — el error se
+  traga en `ChatNotifier` sin llegar a `onUnauthorized`. Compatible con
+  dos isolates (principal + foreground service) refrescando tokens en
+  paralelo y pisándose la rotación del refresh token.
+- `gps.ultimoError` se renderiza crudo en la pantalla de viaje activo
+  (el chofer ve `TimeoutException after 0:00:08.000000...`). Ver
+  `TODO(MC-022-followup)` en `viaje_activo_screen.dart`.
+- Textos sin tildes restantes en `gps_service`, `recorrido_section`,
+  `navegacion_screen`, repos de red y el simulador de ubicación.
+
 ## [0.2.0] — 2026-05-06
 
 Sprint **mobile-changes** completo: 9 MCs (MC-001 a MC-009) cerrados

@@ -184,7 +184,11 @@ ThemeData buildAppTheme() {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleSpacing: 0,
+      // 16 = default de Material (NavigationToolbar.kMiddleSpacing). Con 0
+      // el titulo queda pegado al borde izquierdo en pantallas sin boton
+      // de back (ej. "Mis viajes"), porque titleSpacing es el margen que
+      // reemplaza al leading ausente.
+      titleSpacing: 16,
       titleTextStyle: heading(16, FontWeight.w600),
       shape: const Border(
         bottom: BorderSide(color: IsaColors.zinc800, width: 1),
